@@ -1,5 +1,12 @@
-var addon = require('./build/Release/posixy');
+var posixy;
+try {
+	posixy = require('posixy');
+} catch (exception) {
+	posixy = require('./build/Release/posixy');
+}
 
-addon.runCallback(function (msg) {
-    console.log(msg); // 'hello world'
+posixy.link("sliff", "sloff", function (error) {
+	if (error) {
+		throw error;
+	}
 });
