@@ -1,0 +1,24 @@
+{
+  "name": "posixy",
+  "version": "0.0.1",
+  "description": "some POSIX utilities that behave correctly(tm)",
+  "main": "posixy.js",
+  "directories": {
+  },
+  "scripts": {
+    "test": "node test.js",
+    "install": "node-gyp rebuild"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/herzi/posixy.git"
+  },
+  "keywords": [
+    "posix",
+    "node",
+    "link"
+  ],
+  "author": "Sven Herzberg <herzberg.sven@cluepunk.com>",
+  "license": "BSD 2-Clause License",
+  "gypfile": true
+}
