@@ -1,6 +1,7 @@
 #include <cerrno>   // errno
 #include <unistd.h> // link()
 #include <node.h>   // NODE_MODULE()
+#include <stdlib.h> // malloc()
 
 using namespace v8;
 
