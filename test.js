@@ -30,8 +30,8 @@ child_process.exec("mktemp -d posixy.XXXXXX", function (error, stdout, stderr) {
 		}
 
 		posixy.link(tmpdir + "/sliff", tmpdir + "/sloff", function (error) {
-			fs.unlink(tmpdir + "/sliff");
-			fs.unlink(tmpdir + "/sloff");
+			fs.unlinkSync(tmpdir + "/sliff");
+			fs.unlinkSync(tmpdir + "/sloff");
 			fs.rmdirSync(tmpdir);
 
 			if (error) {
