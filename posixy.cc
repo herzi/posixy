@@ -6,16 +6,25 @@
 
 using namespace v8;
 
+struct LinkMarshal
+{
+    Persistent<Function>  callback;
+};
+
 static Handle<Value>
 Link(const Arguments& args)
 {
     HandleScope scope;
     int status;
+    LinkMarshal* marshal;
 
-    Local<Function> cb = Local<Function>::Cast(args[2]);
+    Local<Function> callback = Local<Function>::Cast(args[2]);
     Local<Value> argv[] = {
         Local<Value>::New(Null())
     };
+
+    marshal = new LinkMarshal;
+    marshal->callback = Persistent<Function>::New(callback);
 
     String::Utf8Value from(args[0]->ToString());
     String::Utf8Value to(args[1]->ToString());
@@ -30,7 +39,15 @@ Link(const Arguments& args)
         free(buf);
     }
 
-    cb->Call(Context::GetCurrent()->Global(), sizeof(argv)/sizeof(*argv), argv);
+    TryCatch  trap;
+
+    marshal->callback->Call(Context::GetCurrent()->Global(), sizeof(argv)/sizeof(*argv), argv);
+    if (trap.HasCaught()) {
+        node::FatalException(trap);
+    }
+
+    marshal->callback.Dispose();
+    delete marshal;
 
     return scope.Close(Undefined());
 }
