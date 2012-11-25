@@ -28,32 +28,17 @@ LinkHandler (uv_work_t* work)
     }
 }
 
-static Handle<Value>
-Link(const Arguments& args)
+static void
+LinkAfter (uv_work_t* work)
 {
-    HandleScope scope;
-    LinkMarshal* marshal;
+    LinkMarshal* marshal = static_cast<LinkMarshal*>(work->data);
+    delete work;
 
-    Local<Function> callback = Local<Function>::Cast(args[2]);
+    TryCatch  trap;
+
     Local<Value> argv[] = {
         Local<Value>::New(Null())
     };
-
-    marshal = new LinkMarshal;
-    marshal->callback    = Persistent<Function>::New(callback);
-    marshal->from        = Persistent<String>::New(Local<String>::Cast(args[0]));
-    marshal->to          = Persistent<String>::New(Local<String>::Cast(args[1]));
-    marshal->status      = 0;
-    marshal->errorNumber = 0;
-
-    uv_work_t* task = new uv_work_t();
-    task->data = marshal;
-
-    LinkHandler(task);
-
-    delete task;
-
-    TryCatch  trap;
 
     if (marshal->status) {
         String::Utf8Value from(marshal->from);
@@ -77,6 +62,28 @@ Link(const Arguments& args)
     marshal->to.Dispose();
     delete marshal;
 
+}
+
+static Handle<Value>
+Link(const Arguments& args)
+{
+    HandleScope scope;
+    LinkMarshal* marshal;
+
+    Local<Function> callback = Local<Function>::Cast(args[2]);
+
+    marshal = new LinkMarshal;
+    marshal->callback    = Persistent<Function>::New(callback);
+    marshal->from        = Persistent<String>::New(Local<String>::Cast(args[0]));
+    marshal->to          = Persistent<String>::New(Local<String>::Cast(args[1]));
+    marshal->status      = 0;
+    marshal->errorNumber = 0;
+
+    uv_work_t* work = new uv_work_t();
+    work->data = marshal;
+
+    LinkHandler(work);
+    LinkAfter(work);
     return scope.Close(Undefined());
 }
 
