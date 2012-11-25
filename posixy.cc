@@ -10,6 +10,7 @@ struct LinkMarshal
 {
     Persistent<Function>  callback;
     Persistent<String>    from;
+    Persistent<String>    to;
 };
 
 static Handle<Value>
@@ -27,9 +28,10 @@ Link(const Arguments& args)
     marshal = new LinkMarshal;
     marshal->callback = Persistent<Function>::New(callback);
     marshal->from = Persistent<String>::New(Local<String>::Cast(args[0]));
+    marshal->to   = Persistent<String>::New(Local<String>::Cast(args[1]));
 
     String::Utf8Value from(marshal->from);
-    String::Utf8Value to(args[1]->ToString());
+    String::Utf8Value to(marshal->to);
     status = link(*from, *to);
     if (status) {
 #define pattern "cannot link %s to %s"
@@ -50,6 +52,7 @@ Link(const Arguments& args)
 
     marshal->callback.Dispose();
     marshal->from.Dispose();
+    marshal->to.Dispose();
     delete marshal;
 
     return scope.Close(Undefined());
