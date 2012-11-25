@@ -9,6 +9,7 @@ using namespace v8;
 struct LinkMarshal
 {
     Persistent<Function>  callback;
+    Persistent<String>    from;
 };
 
 static Handle<Value>
@@ -25,8 +26,9 @@ Link(const Arguments& args)
 
     marshal = new LinkMarshal;
     marshal->callback = Persistent<Function>::New(callback);
+    marshal->from = Persistent<String>::New(Local<String>::Cast(args[0]));
 
-    String::Utf8Value from(args[0]->ToString());
+    String::Utf8Value from(marshal->from);
     String::Utf8Value to(args[1]->ToString());
     status = link(*from, *to);
     if (status) {
@@ -47,6 +49,7 @@ Link(const Arguments& args)
     }
 
     marshal->callback.Dispose();
+    marshal->from.Dispose();
     delete marshal;
 
     return scope.Close(Undefined());
