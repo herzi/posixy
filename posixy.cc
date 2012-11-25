@@ -9,8 +9,8 @@ using namespace v8;
 struct LinkMarshal
 {
     Persistent<Function>  callback;
-    Persistent<String>    from;
-    Persistent<String>    to;
+    char*    from;
+    char*    to;
     int                   status;
     int                   errorNumber;
 };
@@ -18,11 +18,9 @@ struct LinkMarshal
 static void
 LinkHandler (uv_work_t* work)
 {
-    LinkMarshal* marshal = static_cast<LinkMarshal*>(work->data);
+    LinkMarshal* marshal = (LinkMarshal*)work->data;
 
-    String::Utf8Value from(marshal->from);
-    String::Utf8Value to(marshal->to);
-    marshal->status = link(*from, *to);
+    marshal->status = link(marshal->from, marshal->to);
     if (marshal->status) {
         marshal->errorNumber = errno;
     }
@@ -41,12 +39,10 @@ LinkAfter (uv_work_t* work)
     };
 
     if (marshal->status) {
-        String::Utf8Value from(marshal->from);
-        String::Utf8Value to(marshal->to);
 #define pattern "cannot link %s to %s"
-        size_t length = strlen(pattern) + strlen(*from) + strlen(*to) + 1;
+        size_t length = strlen(pattern) + strlen(marshal->from) + strlen(marshal->to) + 1;
         char* buf = (char*)malloc(length);
-        size_t written = snprintf(buf, length, pattern, *from, *to);
+        size_t written = snprintf(buf, length, pattern, marshal->from, marshal->to);
         assert (written < length);
         argv[0] = node::ErrnoException(marshal->errorNumber, "link()", buf, NULL);
         free(buf);
@@ -58,10 +54,9 @@ LinkAfter (uv_work_t* work)
     }
 
     marshal->callback.Dispose();
-    marshal->from.Dispose();
-    marshal->to.Dispose();
+    free(marshal->from);
+    free(marshal->to);
     delete marshal;
-
 }
 
 static Handle<Value>
@@ -72,18 +67,20 @@ Link(const Arguments& args)
 
     Local<Function> callback = Local<Function>::Cast(args[2]);
 
+    String::Utf8Value from(Local<String>::Cast(args[0]));
+    String::Utf8Value to(Local<String>::Cast(args[1]));
+
     marshal = new LinkMarshal;
     marshal->callback    = Persistent<Function>::New(callback);
-    marshal->from        = Persistent<String>::New(Local<String>::Cast(args[0]));
-    marshal->to          = Persistent<String>::New(Local<String>::Cast(args[1]));
+    marshal->from        = strdup(*from);
+    marshal->to          = strdup(*to);
     marshal->status      = 0;
     marshal->errorNumber = 0;
 
     uv_work_t* work = new uv_work_t();
     work->data = marshal;
 
-    LinkHandler(work);
-    LinkAfter(work);
+    uv_queue_work(uv_default_loop(), work, LinkHandler, LinkAfter);
     return scope.Close(Undefined());
 }
 
