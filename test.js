@@ -36,6 +36,8 @@ child_process.exec("mktemp -d posixy.XXXXXX", function (error, stdout, stderr) {
 
 			if (error) {
 				throw error;
+			} else {
+				console.log('test passed.');
 			}
 		});
 	});
