@@ -17,3 +17,9 @@ This package will provide you with some utilities that you might already know fr
 * callback: a function which will be called after creating the link. The function will be invoked with one argument: null or an error.
 
 Create a hard link at linkLocation which points to the file at linkTarget. Unlike [fs.link()](http://nodejs.org/api/fs.html#fs_fs_link_srcpath_dstpath_callback), posixy.link() will fail for an already existing linkLocation.
+
+### posixy.mktemp(callback)
+
+* callback: a function which will be invoked after generating a temporary file name. The function will be invoked with two arguments: Beginning with null or an error followed by an object (like '{path: "…"}') or null (in case of an error).
+
+Create the name for a future temporary file/folder.

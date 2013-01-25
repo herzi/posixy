@@ -60,7 +60,7 @@ LinkAfter (uv_work_t* work)
 }
 
 static Handle<Value>
-Link(const Arguments& args)
+Link (const Arguments& args)
 {
     HandleScope scope;
     LinkMarshal* marshal;
@@ -84,11 +84,86 @@ Link(const Arguments& args)
     return scope.Close(Undefined());
 }
 
+struct MkTempMarshal
+{
+    Persistent<Function>  callback;
+    int                   status;
+    int                   errorNumber;
+    char                * result;
+};
+
+static void
+MkTempHandler (uv_work_t* work)
+{
+    MkTempMarshal* marshal = (MkTempMarshal*)work->data;
+    char* buf = strdup("/tmp/posixy.XXXXXX"); // FIXME: let the user specify this
+    // FIXME: use mkstemps()
+
+    marshal->result = mktemp(buf);
+    if (!marshal->result) {
+        free(buf);
+        marshal->errorNumber = errno;
+    }
+}
+
+static void
+MkTempAfter (uv_work_t* work)
+{
+    MkTempMarshal* marshal = static_cast<MkTempMarshal*>(work->data);
+    delete work;
+
+    TryCatch  trap;
+
+    Local<Value> argv[] = {
+        Local<Value>::New(Null()),
+        Local<Value>::New(Null())
+    };
+
+    if (!marshal->result) {
+        argv[0] = node::ErrnoException(marshal->errorNumber, "link()", "Cannot create a temporary file", NULL);
+    } else {
+        Local<Object> o = Object::New();
+        argv[1] = o;
+        o->Set(String::New("path"), String::New(marshal->result));
+        free(marshal->result);
+    }
+
+    marshal->callback->Call(Context::GetCurrent()->Global(), sizeof(argv)/sizeof(*argv), argv);
+    if (trap.HasCaught()) {
+        node::FatalException(trap);
+    }
+
+    marshal->callback.Dispose();
+    delete marshal;
+}
+
+static Handle<Value>
+MkTemp (const Arguments& args)
+{
+    HandleScope scope;
+    MkTempMarshal* marshal;
+
+    Local<Function> callback = Local<Function>::Cast(args[0]);
+
+    marshal = new MkTempMarshal;
+    marshal->callback    = Persistent<Function>::New(callback);
+    marshal->status      = 0;
+    marshal->errorNumber = 0;
+
+    uv_work_t* work = new uv_work_t();
+    work->data = marshal;
+    uv_queue_work(uv_default_loop(), work, MkTempHandler, MkTempAfter);
+
+    return scope.Close(Undefined());
+}
+
 void
-Init(Handle<Object> target)
+Init (Handle<Object> target)
 {
     target->Set(String::NewSymbol("link"),
             FunctionTemplate::New(Link)->GetFunction());
+    target->Set(String::NewSymbol("mktemp"),
+            FunctionTemplate::New(MkTemp)->GetFunction());
 }
 
 NODE_MODULE(posixy, Init)
