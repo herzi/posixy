@@ -59,6 +59,14 @@ LinkAfter (uv_work_t* work)
     delete marshal;
 }
 
+#if UV_VERSION_MAJOR > 0 || (UV_VERSION_MAJOR == 0 && UV_VERSION_MINOR >= 10)
+static void
+LinkAfter10 (uv_work_t* work, int status)
+{
+    LinkAfter(work);
+}
+#endif
+
 static Handle<Value>
 Link (const Arguments& args)
 {
@@ -80,7 +88,11 @@ Link (const Arguments& args)
     uv_work_t* work = new uv_work_t();
     work->data = marshal;
 
+#if UV_VERSION_MAJOR > 0 || (UV_VERSION_MAJOR == 0 && UV_VERSION_MINOR >= 10)
+    uv_queue_work(uv_default_loop(), work, LinkHandler, LinkAfter10);
+#else
     uv_queue_work(uv_default_loop(), work, LinkHandler, LinkAfter);
+#endif
     return scope.Close(Undefined());
 }
 
@@ -137,6 +149,14 @@ MkTempAfter (uv_work_t* work)
     delete marshal;
 }
 
+#if UV_VERSION_MAJOR > 0 || (UV_VERSION_MAJOR == 0 && UV_VERSION_MINOR >= 10)
+static void
+MkTempAfter10 (uv_work_t* work, int status)
+{
+    MkTempAfter(work);
+}
+#endif
+
 static Handle<Value>
 MkTemp (const Arguments& args)
 {
@@ -152,7 +172,12 @@ MkTemp (const Arguments& args)
 
     uv_work_t* work = new uv_work_t();
     work->data = marshal;
+
+#if UV_VERSION_MAJOR > 0 || (UV_VERSION_MAJOR == 0 && UV_VERSION_MINOR >= 10)
+    uv_queue_work(uv_default_loop(), work, MkTempHandler, MkTempAfter10);
+#else
     uv_queue_work(uv_default_loop(), work, MkTempHandler, MkTempAfter);
+#endif
 
     return scope.Close(Undefined());
 }

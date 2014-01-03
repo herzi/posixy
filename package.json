@@ -1,6 +1,6 @@
 {
   "name": "posixy",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "some POSIX utilities that behave correctly(tm)",
   "main": "posixy.js",
   "directories": {
@@ -16,7 +16,9 @@
   "keywords": [
     "posix",
     "node",
-    "link"
+    "link",
+	"mktemp",
+	"mktmp"
   ],
   "author": "Sven Herzberg <herzberg.sven@cluepunk.com>",
   "license": "BSD 2-Clause License",
